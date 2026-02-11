@@ -111,13 +111,8 @@ class OptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Handle options step."""
         if user_input is not None:
-            # Returnează opțiunile actualizate
-            return self.async_create_entry(
-                title="",
-                data={
-                    CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
-                }
-            )
+            # Returnează doar data, fără title (standard pentru OptionsFlow)
+            return self.async_create_entry(data=user_input)
         
         # Preiau județele curente din opțiuni sau din data
         current_counties = self.config_entry.options.get(
