@@ -196,17 +196,25 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                 "modified": modificat,
             }
             
-            # Parsare date și ore
+            # Parsare date și ore - adaugă timezone dacă lipsește
             if data_inceput:
                 try:
                     # Format: "2026-02-11T21:15"
-                    alert["start_time"] = dt_util.parse_datetime(data_inceput)
+                    dt = dt_util.parse_datetime(data_inceput)
+                    if dt and dt.tzinfo is None:
+                        # Dacă nu are timezone, adaugă Europe/Bucharest
+                        dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
+                    alert["start_time"] = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse start time '%s': %s", data_inceput, err)
             
             if data_sfarsit:
                 try:
-                    alert["end_time"] = dt_util.parse_datetime(data_sfarsit)
+                    dt = dt_util.parse_datetime(data_sfarsit)
+                    if dt and dt.tzinfo is None:
+                        # Dacă nu are timezone, adaugă Europe/Bucharest
+                        dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
+                    alert["end_time"] = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse end time '%s': %s", data_sfarsit, err)
             

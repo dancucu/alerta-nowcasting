@@ -18,16 +18,26 @@ from homeassistant.helpers import config_validation as cv
 from .const import (
     DOMAIN,
     CONF_API_URL,
+    CONF_COUNTIES,
     DEFAULT_API_URL,
     DEFAULT_NAME,
+    ROMANIAN_COUNTIES,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-# Schema simplificată - doar URL pentru început
+# Schema cu URL și județe
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_API_URL, default=DEFAULT_API_URL): cv.string,
+    }
+)
+
+STEP_COUNTIES_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_COUNTIES, default=[]): cv.multi_select(
+            {county: county for county in ROMANIAN_COUNTIES}
+        ),
     }
 )
 
@@ -73,11 +83,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Alerte Nowcasting."""
 
     VERSION = 1
+    user_data: dict[str, Any] = {}
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step."""
+        """Handle the initial step - API URL."""
         errors: dict[str, str] = {}
         
         if user_input is not None:
@@ -87,7 +98,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(user_input[CONF_API_URL])
                 self._abort_if_unique_id_configured()
                 
-                return self.async_create_entry(title=info["title"], data=user_input)
+                self.user_data = user_input
+                return await self.async_step_counties()
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except InvalidXML:
@@ -100,6 +112,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
+        )
+
+    async def async_step_counties(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle county selection step."""
+        if user_input is not None:
+            config_data = {**self.user_data, **user_input}
+            return self.async_create_entry(title="Alerte Nowcasting", data=config_data)
+        
+        return self.async_show_form(
+            step_id="counties",
+            data_schema=STEP_COUNTIES_DATA_SCHEMA,
         )
 
 
