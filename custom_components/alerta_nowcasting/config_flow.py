@@ -108,23 +108,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlow(config_entries.OptionsFlow):
     """Handle options for Alerte Nowcasting."""
     
-    def __init__(self, config_entry):
-        """Inițializează options flow."""
-        self.config_entry = config_entry
-    
     async def async_step_init(self, user_input=None):
         """Handle options step."""
         if user_input is not None:
-            # Actualizează opțiunile cu județele selectate
-            self.hass.config_entries.async_update_entry(
-                self.config_entry,
-                options={
+            # Returnează opțiunile actualizate
+            return self.async_create_entry(
+                title="",
+                data={
                     CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
                 }
             )
-            # Reload integrarea cu noile opțiuni
-            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-            return self.async_abort(reason="reconfigure_successful")
         
         # Preiau județele curente din opțiuni sau din data
         current_counties = self.config_entry.options.get(

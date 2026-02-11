@@ -1,0 +1,27 @@
+# Card simplu pentru afișarea alertei nowcasting
+# Afișează codul de culoare, județul și detaliile alertei
+
+type: entities
+title: Alerte Meteo Nowcasting
+entities:
+  - entity: sensor.alerta_nowcasting_bucuresti
+    name: București
+    secondary_info: last-changed
+    icon: mdi:alert-circle
+  - type: attribute
+    entity: sensor.alerta_nowcasting_bucuresti
+    attribute: alert_title
+    name: Titlu alertă
+  - type: attribute
+    entity: sensor.alerta_nowcasting_bucuresti
+    attribute: alert_description
+    name: Descriere
+  - type: attribute
+    entity: sensor.alerta_nowcasting_bucuresti
+    attribute: alert_start
+    name: Început
+  - type: attribute
+    entity: sensor.alerta_nowcasting_bucuresti
+    attribute: alert_end
+    name: Sfârșit
+state_color: true

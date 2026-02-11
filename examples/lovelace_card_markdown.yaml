@@ -1,0 +1,46 @@
+# Card avansat cu Markdown pentru afișare alertă nowcasting
+# Folosește culori și formatare pentru vizibilitate mai bună
+
+type: markdown
+content: >-
+  {% set entity = 'sensor.alerta_nowcasting_bucuresti' %}
+  {% set state = states(entity) %}
+  {% set alert_title = state_attr(entity, 'alert_title') %}
+  {% set alert_desc = state_attr(entity, 'alert_description') %}
+  {% set alert_start = state_attr(entity, 'alert_start') %}
+  {% set alert_end = state_attr(entity, 'alert_end') %}
+  {% set county = state_attr(entity, 'county') %}
+  
+  {% if state != 'Ok' %}
+    {% if state == 'Roșu' %}
+      {% set color = '#FF0000' %}
+      {% set emoji = '🔴' %}
+    {% elif state == 'Portocaliu' %}
+      {% set color = '#FF8C00' %}
+      {% set emoji = '🟠' %}
+    {% elif state == 'Galben' %}
+      {% set color = '#FFD700' %}
+      {% set emoji = '🟡' %}
+    {% else %}
+      {% set color = '#808080' %}
+      {% set emoji = '⚪' %}
+    {% endif %}
+  
+    <ha-alert alert-type="warning" style="border-left: 4px solid {{ color }};">
+      <b>{{ emoji }} {{ alert_title }}</b>
+    </ha-alert>
+    
+    **Județ:** {{ county }}
+    
+    **Descriere:**
+    {{ alert_desc }}
+    
+    **Perioada:**
+    📅 Început: {{ alert_start | default('N/A') }}
+    📅 Sfârșit: {{ alert_end | default('N/A') }}
+  {% else %}
+    ✅ **Nicio alertă activă pentru {{ county }}**
+    
+    Toate condițiile meteo sunt normale.
+  {% endif %}
+title: 🌦️ Alertă Meteo {{ state_attr('sensor.alerta_nowcasting_bucuresti', 'county') }}

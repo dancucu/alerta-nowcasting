@@ -1,0 +1,96 @@
+# Card pentru mai multe județe - afișează toate alertele
+# Folosește conditional pentru a afișa doar județele cu alerte active
+
+type: vertical-stack
+cards:
+  # București
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.alerta_nowcasting_bucuresti
+        state_not: Ok
+    card:
+      type: markdown
+      content: >-
+        {% set entity = 'sensor.alerta_nowcasting_bucuresti' %}
+        {% set state = states(entity) %}
+        {% if state == 'Roșu' %}
+          🔴
+        {% elif state == 'Portocaliu' %}
+          🟠
+        {% elif state == 'Galben' %}
+          🟡
+        {% endif %}
+        **{{ state_attr(entity, 'county') }} - Cod {{ state }}**
+        
+        {{ state_attr(entity, 'alert_title') }}
+        
+        {{ state_attr(entity, 'alert_description')[:150] }}...
+      title: 🌦️ București
+
+  # Brașov
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.alerta_nowcasting_brasov
+        state_not: Ok
+    card:
+      type: markdown
+      content: >-
+        {% set entity = 'sensor.alerta_nowcasting_brasov' %}
+        {% set state = states(entity) %}
+        {% if state == 'Roșu' %}
+          🔴
+        {% elif state == 'Portocaliu' %}
+          🟠
+        {% elif state == 'Galben' %}
+          🟡
+        {% endif %}
+        **{{ state_attr(entity, 'county') }} - Cod {{ state }}**
+        
+        {{ state_attr(entity, 'alert_title') }}
+        
+        {{ state_attr(entity, 'alert_description')[:150] }}...
+      title: 🌦️ Brașov
+
+  # Constanța
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.alerta_nowcasting_constanta
+        state_not: Ok
+    card:
+      type: markdown
+      content: >-
+        {% set entity = 'sensor.alerta_nowcasting_constanta' %}
+        {% set state = states(entity) %}
+        {% if state == 'Roșu' %}
+          🔴
+        {% elif state == 'Portocaliu' %}
+          🟠
+        {% elif state == 'Galben' %}
+          🟡
+        {% endif %}
+        **{{ state_attr(entity, 'county') }} - Cod {{ state }}**
+        
+        {{ state_attr(entity, 'alert_title') }}
+        
+        {{ state_attr(entity, 'alert_description')[:150] }}...
+      title: 🌦️ Constanța
+
+  # Mesaj dacă nicio alertă
+  - type: conditional
+    conditions:
+      - condition: state
+        entity: sensor.alerta_nowcasting_bucuresti
+        state: Ok
+      - condition: state
+        entity: sensor.alerta_nowcasting_brasov
+        state: Ok
+      - condition: state
+        entity: sensor.alerta_nowcasting_constanta
+        state: Ok
+    card:
+      type: markdown
+      content: ✅ **Nicio alertă activă în județele monitorizate**
+      title: 🌦️ Status Alerte
