@@ -43,7 +43,7 @@ Integrare personalizată pentru Home Assistant care monitorizează alertele mete
 1. Mergi la **Settings** → **Devices & Services**
 2. Click pe butonul **"+ Add Integration"**
 3. Caută **"Alerte Nowcasting"**
-4. Introdu URL-ul API XML (implicit: `https://www.meteoromania.ro/xml/avertizari-nowcasting.xml`)
+4. Introdu URL-ul API XML (implicit: `https://www.meteoromania.ro/avertizari-nowcasting-xml.php`)
 5. **(Opțional)** Selectează județele pentru care dorești să primești alerte:
    - Poți selecta unul sau mai multe județe din listă
    - Dacă nu selectezi niciun județ, vei primi alerte pentru toată țara
@@ -83,7 +83,9 @@ Dacă ai selectat județe specifice în configurare, senzorul va afișa **doar a
 | `alerts` | Lista completă cu toate alertele (active + viitoare) |
 | `configured_counties` | Județele configurate pentru monitorizare ("toate" dacă nu e specificat) |
 | `alert_title` | Titlul primei alerte active |
-| `alert_description` | Descrierea detaliată a alertei |
+| `alert_description` | Descrierea detaliată a alertei (semnalare) |
+| `alert_zona` | Zona geografică afectată (cu detalii complete) |
+| `alert_message_type` | Tipul mesajului (Avertizare/Atentionare/Informare) |
 | `alert_start` | Data și ora de început a alertei |
 | `alert_end` | Data și ora de sfârșit a alertei |
 | `counties` | Lista județelor afectate de alerta curentă |

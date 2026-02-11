@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import timedelta
 from typing import Any
 import xml.etree.ElementTree as ET
+from html import unescape
 
 import aiohttp
 import async_timeout
@@ -34,6 +36,9 @@ from .const import (
     PHENOMENA_ICONS,
     PHENOMENA_TYPES,
     SEVERITY_LEVELS,
+    COLOR_CODES,
+    MESSAGE_TYPES,
+    ROMANIAN_COUNTIES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -94,18 +99,11 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
             # Log pentru debugging
             _LOGGER.debug("Parsing XML. Root tag: %s, children count: %d", root.tag, len(list(root)))
             
-            # Parsare diferite structuri XML posibile
-            for alert_elem in root.findall(".//avertizare") or root.findall(".//alert") or root.findall(".//warning"):
+            # Parsare alerte din noul format API (cu atribute)
+            for alert_elem in root.findall(".//avertizare"):
                 alert = self._parse_alert_element(alert_elem)
                 if alert:
                     alerts.append(alert)
-            
-            # Dacă nu sunt alerte în structura de mai sus, încearcă alte variante
-            if not alerts:
-                for item in root.findall(".//item"):
-                    alert = self._parse_item_element(item)
-                    if alert:
-                        alerts.append(alert)
             
             # Log pentru rezultate
             if not alerts:
@@ -160,65 +158,124 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
         return county.strip().lower()
 
     def _parse_alert_element(self, element: ET.Element) -> dict[str, Any] | None:
-        """Parse an alert/avertizare XML element."""
+        """Parse an avertizare XML element with attributes."""
         try:
-            alert = {}
+            # Extrage toate atributele din noul format API
+            tip_mesaj = element.get("tipMesaj", "")
+            nume_tip_mesaj = element.get("numeTipMesaj", "")
+            data_inceput = element.get("dataInceput", "")
+            data_sfarsit = element.get("dataSfarsit", "")
+            zona = element.get("zona", "")
+            semnalare = element.get("semnalare", "")
+            culoare = element.get("culoare", "")
+            nume_culoare = element.get("numeCuloare", "")
+            modificat = element.get("modificat", "")
+            creat = element.get("creat", "")
             
-            # Extragere date standard
-            for field in ["id", "title", "description", "severity", "phenomena"]:
-                value = element.findtext(field) or element.findtext(field.upper())
-                if value:
-                    alert[field] = value
+            # Decodare HTML entities (&#x21B; = ț, &#xE2; = â, etc.)
+            zona = unescape(zona)
+            semnalare = unescape(semnalare)
+            nume_culoare = unescape(nume_culoare)
             
-            # Județe afectate
-            counties = []
-            for county_elem in element.findall(".//county") or element.findall(".//judet"):
-                county = county_elem.text or county_elem.get("name")
-                if county:
-                    counties.append(county)
-            alert["counties"] = counties
+            # Extragere județe din câmpul zona
+            counties = self._extract_counties_from_zona(zona)
             
-            # Timp start/end
-            start_time = element.findtext("start_time") or element.findtext("startTime") or element.findtext("onset")
-            end_time = element.findtext("end_time") or element.findtext("endTime") or element.findtext("expires")
+            # Construire dicționar alert
+            alert = {
+                "id": f"{creat}_{culoare}_{tip_mesaj}",
+                "title": f"{nume_tip_mesaj} - Cod {nume_culoare}",
+                "description": semnalare,
+                "severity": nume_culoare.lower(),
+                "severity_level": SEVERITY_LEVELS.get(nume_culoare.lower(), "unknown"),
+                "color_code": culoare,
+                "message_type": tip_mesaj,
+                "message_type_name": nume_tip_mesaj,
+                "counties": counties,
+                "zona": zona,
+                "created": creat,
+                "modified": modificat,
+            }
             
-            if start_time:
-                alert["start_time"] = dt_util.parse_datetime(start_time)
-            if end_time:
-                alert["end_time"] = dt_util.parse_datetime(end_time)
+            # Parsare date și ore
+            if data_inceput:
+                try:
+                    # Format: "2026-02-11T21:15"
+                    alert["start_time"] = dt_util.parse_datetime(data_inceput)
+                except Exception as err:
+                    _LOGGER.warning("Could not parse start time '%s': %s", data_inceput, err)
             
-            # Severitate
-            severity = alert.get("severity", "").lower()
-            alert["severity_level"] = SEVERITY_LEVELS.get(severity, "unknown")
+            if data_sfarsit:
+                try:
+                    alert["end_time"] = dt_util.parse_datetime(data_sfarsit)
+                except Exception as err:
+                    _LOGGER.warning("Could not parse end time '%s': %s", data_sfarsit, err)
             
-            return alert if alert else None
+            # Detectare fenomen din descriere
+            phenomena = self._detect_phenomena(semnalare.lower())
+            if phenomena:
+                alert["phenomena"] = phenomena
+            
+            return alert
             
         except Exception as err:
             _LOGGER.error("Error parsing alert element: %s", err)
             return None
-
-    def _parse_item_element(self, element: ET.Element) -> dict[str, Any] | None:
-        """Parse an item XML element (RSS-style feed)."""
-        try:
-            alert = {
-                "title": element.findtext("title", ""),
-                "description": element.findtext("description", ""),
-                "link": element.findtext("link", ""),
-                "pubDate": element.findtext("pubDate", ""),
-            }
-            
-            # Încearcă să extragi data
-            if alert["pubDate"]:
-                try:
-                    alert["start_time"] = dt_util.parse_datetime(alert["pubDate"])
-                except:
-                    pass
-            
-            return alert if alert.get("title") else None
-            
-        except Exception as err:
-            _LOGGER.error("Error parsing item element: %s", err)
-            return None
+    
+    def _extract_counties_from_zona(self, zona: str) -> list[str]:
+        """Extract county names from zona field."""
+        counties = []
+        
+        # Elimină tag-uri HTML
+        zona_clean = re.sub(r'<[^>]+>', '', zona)
+        
+        # Caută județe menționate în text
+        # Exemplu: "Județul Cluj , zona de munte de peste 1800 m;"
+        for county in ROMANIAN_COUNTIES:
+            # Variantele posibile: "Județul X", "judetul X", "X"
+            patterns = [
+                rf'jude[țt]ul\s+{re.escape(county)}',
+                rf'\b{re.escape(county)}\b',
+            ]
+            for pattern in patterns:
+                if re.search(pattern, zona_clean, re.IGNORECASE):
+                    if county not in counties:
+                        counties.append(county)
+                    break
+        
+        return counties
+    
+    def _detect_phenomena(self, description: str) -> str:
+        """Detect phenomena type from description."""
+        # Mapare cuvinte cheie la fenomene
+        keywords_map = {
+            "ceata": "ceata",
+            "ceață": "ceata",
+            "polei": "polei",
+            "ninsoare": "ninsoare",
+            "ninsori": "ninsoare",
+            "viscol": "viscol",
+            "plo": "ploi_torentiale",  # Matches: ploi, ploaie, ploi torențiale
+            "torential": "ploi_torentiale",
+            "grindina": "grindina",
+            "grindină": "grindina",
+            "vijelie": "vijelie",
+            "furtuna": "vijelie",
+            "furtună": "vijelie",
+            "fulger": "fulger",
+            "descarcari electrice": "fulger",
+            "descărcări electrice": "fulger",
+            "vant": "vant_puternic",  # Matches: vânt, vant
+            "v[aâ]nt": "vant_puternic",
+            "rafal": "vant_puternic",
+            "rafalã": "vant_puternic",
+            "instabilitate": "instabilitate",
+        }
+        
+        for keyword, phenomena in keywords_map.items():
+            if keyword in description:
+                return phenomena
+        
+        return "default"
 
 
 class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
@@ -262,10 +319,12 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         if active_alerts:
             first_alert = active_alerts[0]
             attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
-            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "")
+            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
             attributes[ATTR_SEVERITY] = first_alert.get("severity_level", "unknown")
             attributes["alert_title"] = first_alert.get("title", "")
             attributes["alert_description"] = first_alert.get("description", "")
+            attributes["alert_zona"] = first_alert.get("zona", "")
+            attributes["alert_message_type"] = first_alert.get("message_type_name", "")
             
             if first_alert.get("start_time"):
                 attributes["alert_start"] = first_alert["start_time"].isoformat()
@@ -273,11 +332,8 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
                 attributes["alert_end"] = first_alert["end_time"].isoformat()
             
             # Setează iconița în funcție de fenomen
-            phenomena = first_alert.get("phenomena", "").lower()
-            for key in PHENOMENA_ICONS:
-                if key in phenomena:
-                    self._attr_icon = PHENOMENA_ICONS[key]
-                    break
+            phenomena = first_alert.get("phenomena", "default")
+            self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
             self._attr_icon = "mdi:weather-cloudy"
         

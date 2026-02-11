@@ -5,6 +5,41 @@ Toate modificările importante ale acestui proiect vor fi documentate în acest 
 Formatul este bazat pe [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 și acest proiect respectă [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-11
+
+### 🚨 BREAKING CHANGES - Refactorizare completă API
+- **API NOU**: Migrare la endpoint-ul oficial `https://www.meteoromania.ro/avertizari-nowcasting-xml.php`
+- **Format XML nou**: Parsare atribute XML în loc de elemente copil
+- **⚠️ NECESITĂ RECONFIGURARE**: După actualizare, trebuie reconfigurată integrarea cu noul URL
+
+### ✨ Funcționalități noi
+- **Extracție automată județe**: Detectare inteligentă a județelor din câmpul `zona` cu regex
+- **HTML entities**: Suport complet pentru caractere speciale românești (ă, â, î, ș, ț)
+- **Detectare fenomene**: Identificare automată a tipului fenomenului din descriere
+- **Tipuri mesaje**: Suport pentru Avertizare, Atentionare și Informare nowcasting
+- **Atribute noi**:
+  - `alert_zona` - zona geografică detaliată
+  - `alert_message_type` - tipul mesajului (Avertizare/Atentionare/Informare)
+
+### 🔧 Îmbunătățiri tehnice
+- Parsare robustă cu `html.unescape()` pentru entities
+- Mapare corectă coduri culoare (0=galben, 1=portocaliu, 2=roșu)
+- Eliminare tag-uri HTML din zone text
+- Import nou: `re` pentru regex, `html.unescape` pentru decodare
+- Constante noi: `COLOR_CODES`, `MESSAGE_TYPES`, `ROMANIAN_COUNTIES`
+
+### 📝 Documentație
+- README actualizat cu noul URL API
+- Exemplu XML actualizat cu formatul nou
+- MIGRATION.md actualizat cu ghid detaliat de migrare
+- Tabel atribute extins în documentație
+
+### 🗑️ Deprecated
+- Format XML vechi (cu elemente copil) nu mai este suportat
+- URL vechi `https://www.meteoromania.ro/xml/avertizari-nowcasting.xml` nu mai funcționează
+
+---
+
 ## [1.2.0] - 2026-02-11
 
 ### 🔧 Major Fix - Eroare 500 Internal Server

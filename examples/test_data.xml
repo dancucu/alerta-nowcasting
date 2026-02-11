@@ -1,56 +1,41 @@
-# Exemplu XML pentru testare
-# Salvează ca test_data.xml pentru testare locală
-
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Exemplu XML pentru testare - formatul nou API -->
+<!-- Salvează ca test_data.xml pentru testare locală -->
+
 <avertizariNowcasting>
-  <avertizare>
-    <id>1234567890</id>
-    <title>Cod portocaliu de ploi torențiale</title>
-    <description>
-      În județele menționate se vor semnala ploi torențiale ce vor cumula
-      30-40 l/mp și izolat peste 50 l/mp, descărcări electrice frecvente,
-      intensificări ale vântului, cu rafale de 60-70 km/h.
-    </description>
-    <severity>portocaliu</severity>
-    <phenomena>ploi_torentiale</phenomena>
-    <start_time>2026-02-11T14:00:00+02:00</start_time>
-    <end_time>2026-02-11T20:00:00+02:00</end_time>
-    <county>București</county>
-    <county>Ilfov</county>
-    <county>Prahova</county>
-    <county>Dâmbovița</county>
-  </avertizare>
+  <avertizare 
+    tipMesaj="1" 
+    numeTipMesaj="Avertizare nowcasting" 
+    dataInceput="2026-02-11T14:00" 
+    dataSfarsit="2026-02-11T20:00" 
+    zona="Jude&#x21B;ul Bucure&#x219;ti, jude&#x21B;ul Ilfov, jude&#x21B;ul Prahova, jude&#x21B;ul D&#xE2;mbovi&#x21B;a;&lt;br&gt;" 
+    semnalare="Ploi toren&#x21B;iale ce vor cumula 30-40 l/mp &#x219;i izolat peste 50 l/mp, desc&#x103;rc&#x103;ri electrice frecvente, intensific&#x103;ri ale v&#xE2;ntului, cu rafale de 60-70 km/h." 
+    culoare="1" 
+    numeCuloare="portocaliu" 
+    modificat="2026-02-11 13:45:00" 
+    creat="2026-02-11 13:30:00"/>
   
-  <avertizare>
-    <id>1234567891</id>
-    <title>Cod galben de vânt puternic</title>
-    <description>
-      Intensificări ale vântului cu rafale de 50-60 km/h.
-      În zona montană rafalele vor depăși 70-80 km/h.
-    </description>
-    <severity>galben</severity>
-    <phenomena>vant_puternic</phenomena>
-    <start_time>2026-02-11T18:00:00+02:00</start_time>
-    <end_time>2026-02-12T06:00:00+02:00</end_time>
-    <county>Brașov</county>
-    <county>Argeș</county>
-    <county>Vâlcea</county>
-  </avertizare>
+  <avertizare 
+    tipMesaj="2" 
+    numeTipMesaj="Atentionare nowcasting" 
+    dataInceput="2026-02-11T18:00" 
+    dataSfarsit="2026-02-12T06:00" 
+    zona="Jude&#x21B;ul Bra&#x219;ov, jude&#x21B;ul Arge&#x219;, jude&#x21B;ul V&#xE2;lcea;&lt;br&gt;" 
+    semnalare="Intensific&#x103;ri ale v&#xE2;ntului cu rafale de 50-60 km/h. &#xCE;n zona montan&#x103; rafalele vor dep&#x103;&#x219;i 70-80 km/h." 
+    culoare="0" 
+    numeCuloare="galben" 
+    modificat="2026-02-11 17:30:00" 
+    creat="2026-02-11 17:15:00"/>
   
-  <avertizare>
-    <id>1234567892</id>
-    <title>Cod roșu de viscol</title>
-    <description>
-      Viscol puternic, ninsori abundente și vizibilitate redusă sub 50 m.
-      Stratul de zăpadă va depăși 40-50 cm. Drumuri blocate.
-    </description>
-    <severity>rosu</severity>
-    <phenomena>viscol</phenomena>
-    <start_time>2026-02-11T22:00:00+02:00</start_time>
-    <end_time>2026-02-12T12:00:00+02:00</end_time>
-    <county>Suceava</county>
-    <county>Neamț</county>
-    <county>Harghita</county>
-    <county>Covasna</county>
-  </avertizare>
+  <avertizare 
+    tipMesaj="1" 
+    numeTipMesaj="Avertizare nowcasting" 
+    dataInceput="2026-02-11T22:00" 
+    dataSfarsit="2026-02-12T12:00" 
+    zona="Jude&#x21B;ul Suceava, jude&#x21B;ul Neam&#x21B;, jude&#x21B;ul Harghita, jude&#x21B;ul Covasna;&lt;br&gt;" 
+    semnalare="Viscol puternic, ninsori abundente &#x219;i vizibilitate redus&#x103; sub 50 m. Stratul de z&#x103;pad&#x103; va dep&#x103;&#x219;i 40-50 cm. Drumuri blocate." 
+    culoare="2" 
+    numeCuloare="rosu" 
+    modificat="2026-02-11 21:45:00" 
+    creat="2026-02-11 21:30:00"/>
 </avertizariNowcasting>

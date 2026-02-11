@@ -6,7 +6,7 @@ NAME = "Alerte Nowcasting Meteo"
 # Configuration
 CONF_API_URL = "api_url"
 CONF_COUNTIES = "counties"
-DEFAULT_API_URL = "https://www.meteoromania.ro/xml/avertizari-nowcasting.xml"
+DEFAULT_API_URL = "https://www.meteoromania.ro/avertizari-nowcasting-xml.php"
 
 # Defaults
 DEFAULT_SCAN_INTERVAL = 300  # 5 minute
@@ -42,6 +42,20 @@ SEVERITY_LEVELS = {
     "galben": "yellow",
     "portocaliu": "orange",
     "rosu": "red",
+}
+
+# Mapare coduri culoare din API
+COLOR_CODES = {
+    "0": "galben",
+    "1": "portocaliu",
+    "2": "rosu",
+}
+
+# Tipuri mesaje din API
+MESSAGE_TYPES = {
+    "1": "Avertizare nowcasting",
+    "2": "Atentionare nowcasting",
+    "3": "Informare nowcasting",
 }
 
 # Iconițe pentru diferite fenomene

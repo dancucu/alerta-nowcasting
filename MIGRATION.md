@@ -1,4 +1,85 @@
-# Ghid de Migrare la v1.1.0
+# Ghid de Migrare
+
+## Migrare la v2.0.0 (Februarie 2026)
+
+### 🚨 SCHIMBARE MAJORĂ: API NOU
+
+Versiunea 2.0.0 aduce o refactorizare completă pentru a utiliza noul endpoint oficial al API-ului Administrației Naționale de Meteorologie (ANM).
+
+#### Ce s-a schimbat?
+
+**API URL NOU:**
+- ❌ VECHI: `https://www.meteoromania.ro/xml/avertizari-nowcasting.xml`
+- ✅ NOU: `https://www.meteoromania.ro/avertizari-nowcasting-xml.php`
+
+**Format XML diferit:**
+- API-ul nou folosește atribute XML în loc de elemente copil
+- Extractie automată a județelor din câmpul `zona`
+- Suport pentru HTML entities și caractere speciale
+- Noi câmpuri: `alert_zona`, `alert_message_type`
+
+**Îmbunătățiri:**
+- ✅ Parsare îmbunătățită cu decodare HTML entities
+- ✅ Detectare automată a fenomenelor din descriere
+- ✅ Suport pentru tipuri de mesaje (Avertizare, Atentionare, Informare)
+- ✅ Mapare corectă a codurilor de culoare (0=galben, 1=portocaliu, 2=roșu)
+- ✅ Extracție robustă a județelor cu regex
+
+### 📦 Pași de actualizare
+
+#### 1. Actualizează integrarea
+
+**Prin HACS:**
+1. Mergi la HACS → Integrations
+2. Găsește "Alerte Nowcasting"
+3. Click pe "Update" → v2.0.0
+4. **Restart Home Assistant**
+
+**Manual:**
+1. Descarcă versiunea 2.0.0 de pe GitHub
+2. Înlocuiește folderul `custom_components/alerta_nowcasting`
+3. **Restart Home Assistant**
+
+#### 2. Reconfigurare NECESARĂ
+
+⚠️ **IMPORTANT:** După actualizare, trebuie să reconfigurezi integrarea cu noul URL!
+
+1. Mergi la **Settings** → **Devices & Services**
+2. Găsește "Alerte Nowcasting Meteo"
+3. Click pe **"Configure"** sau șterge și re-adaugă integrarea
+4. Introdu noul URL: `https://www.meteoromania.ro/avertizari-nowcasting-xml.php`
+5. Selectează județele (opțional)
+6. Click pe **"Submit"**
+
+#### 3. Verificare funcționare
+
+După reconfigurare, verifică că senzorul funcționează:
+- Mergi la **Developer Tools** → **States**
+- Caută `sensor.alerta_nowcasting`
+- Verifică că are date și nu afișează erori în log
+
+### 📊 Atribute noi
+
+Versiunea 2.0.0 adaugă următoarele atribute:
+- `alert_zona` - zona geografică detaliată afectată
+- `alert_message_type` - tipul mesajului (Avertizare/Atentionare/Informare)
+
+Cardurile Lovelace existente vor funcționa fără modificări.
+
+### 🐛 Depanare
+
+**Problemă: Senzorul nu afișează date**
+- Verifică logs: **Settings** → **System** → **Logs**
+- Caută erori legate de "alerta_nowcasting"
+- Asigură-te că URL-ul este corect: `https://www.meteoromania.ro/avertizari-nowcasting-xml.php`
+
+**Problemă: Județele nu sunt detectate corect**
+- Noua versiune extrage automat județele din câmpul `zona`
+- Dacă un județ lipsește, raportează problema pe GitHub
+
+---
+
+## Migrare la v1.1.0
 
 Dacă ai deja instalată integrarea Alerte Nowcasting v1.0.0, acest ghid te va ajuta să actualizezi la v1.1.0 cu noua funcționalitate de filtrare pe județe.
 
