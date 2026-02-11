@@ -98,6 +98,49 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=STEP_USER_DATA_SCHEMA,
         )
+    
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Return options flow."""
+        return OptionsFlow(config_entry)
+
+
+class OptionsFlow(config_entries.OptionsFlow):
+    """Handle options for Alerte Nowcasting."""
+    
+    def __init__(self, config_entry):
+        """Inițializează options flow."""
+        self.config_entry = config_entry
+    
+    async def async_step_init(self, user_input=None):
+        """Handle options step."""
+        if user_input is not None:
+            # Actualizează opțiunile cu județele selectate
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
+                }
+            )
+        
+        # Preiau județele curente din config entry
+        current_counties = self.config_entry.data.get(CONF_COUNTIES, [])
+        
+        options_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_COUNTIES,
+                    default=current_counties
+                ): cv.multi_select(
+                    {county: county for county in sorted(ROMANIAN_COUNTIES)}
+                ),
+            }
+        )
+        
+        return self.async_show_form(
+            step_id="init",
+            data_schema=options_schema,
+        )
 
 
 class CannotConnect(HomeAssistantError):
