@@ -55,10 +55,19 @@ async def async_setup_entry(
     # Citesc județele din opțiuni (dacă există) sau din config data
     selected_counties = entry.options.get(CONF_COUNTIES) or entry.data.get(CONF_COUNTIES, [])
     
+    # Dacă nu sunt selectate județe, creeaz un senzor pentru toată România
+    if not selected_counties:
+        selected_counties = ["România"]
+    
     coordinator = AlerteNowcastingCoordinator(hass, api_url, selected_counties)
     await coordinator.async_config_entry_first_refresh()
     
-    async_add_entities([AlerteNowcastingSensor(coordinator, entry)], True)
+    # Creez senzori separați pentru fiecare județ/regiune
+    entities = []
+    for county in selected_counties:
+        entities.append(AlerteNowcastingSensor(coordinator, entry, county))
+    
+    async_add_entities(entities, True)
 
 
 class AlerteNowcastingCoordinator(DataUpdateCoordinator):
@@ -294,19 +303,39 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: AlerteNowcastingCoordinator,
         entry: ConfigEntry,
+        county: str = "România",
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_name = "Alerta Nowcasting"
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}"
+        self.county = county
+        
+        # Convertit județul în slug (Ex: "București" -> "bucuresti")
+        county_slug = county.lower().replace(" ", "_").replace("ă", "a").replace("î", "i").replace("ț", "t").replace("ş", "s")
+        
+        self._attr_name = f"Alerta Nowcasting {county}"
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{county_slug}"
         self._attr_icon = "mdi:weather-cloudy-alert"
 
     @property
     def native_value(self) -> int:
-        """Return the state of the sensor."""
+        """Return the state of the sensor - count of active alerts for this county."""
         if self.coordinator.data:
-            return len(self.coordinator.data.get("active_alerts", []))
+            active_alerts = self._get_county_alerts(self.coordinator.data.get("active_alerts", []))
+            return len(active_alerts)
         return 0
+
+    def _get_county_alerts(self, alerts: list[dict]) -> list[dict]:
+        """Filter alerts for this county."""
+        if self.county == "România":
+            # Return all alerts
+            return alerts
+        
+        # Filter alerts că conțin acest județ
+        county_alerts = []
+        for alert in alerts:
+            if self.county in alert.get("counties", []):
+                county_alerts.append(alert)
+        return county_alerts
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -315,16 +344,20 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             return {}
         
         data = self.coordinator.data
-        active_alerts = data.get("active_alerts", [])
+        all_alerts = data.get("alerts", [])
+        active_alerts = self._get_county_alerts(data.get("active_alerts", []))
+        
+        # Get county-specific alerts for attributes
+        county_alerts = self._get_county_alerts(all_alerts)
         
         attributes = {
             ATTR_ACTIVE_ALERTS: len(active_alerts),
-            ATTR_ALERTS: data.get("alerts", []),
+            ATTR_ALERTS: county_alerts,
             ATTR_LAST_UPDATE: data.get("last_update"),
-            "configured_counties": self.coordinator.selected_counties if self.coordinator.selected_counties else "toate",
+            "county": self.county,
         }
         
-        # Adaugă detalii despre prima alertă activă
+        # Adaugă detalii despre prima alertă activă pentru acest județ
         if active_alerts:
             first_alert = active_alerts[0]
             attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
