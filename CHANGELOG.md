@@ -5,6 +5,13 @@ Toate modificările importante ale acestui proiect vor fi documentate în acest 
 Formatul este bazat pe [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 și acest proiect respectă [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-02-11
+
+### 🐛 Bug Fixes
+- **Eroare "Unexpected error" la instalare** - Rezolvată problema cu schema de configurare
+- **Selector județe** - Folosește acum cv.multi_select în loc de selector custom
+- **Validare îmbunătățită** - Schema corectă pentru voluptuous
+
 ## [1.1.1] - 2026-02-11
 
 ### 🐛 Bug Fixes
