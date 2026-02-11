@@ -116,15 +116,21 @@ class OptionsFlow(config_entries.OptionsFlow):
         """Handle options step."""
         if user_input is not None:
             # Actualizează opțiunile cu județele selectate
-            return self.async_create_entry(
-                title="",
-                data={
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                options={
                     CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
                 }
             )
+            # Reload integrarea cu noile opțiuni
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+            return self.async_abort(reason="reconfigure_successful")
         
-        # Preiau județele curente din config entry
-        current_counties = self.config_entry.data.get(CONF_COUNTIES, [])
+        # Preiau județele curente din opțiuni sau din data
+        current_counties = self.config_entry.options.get(
+            CONF_COUNTIES,
+            self.config_entry.data.get(CONF_COUNTIES, [])
+        )
         
         options_schema = vol.Schema(
             {
