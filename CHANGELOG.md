@@ -5,6 +5,13 @@ Toate modificările importante ale acestui proiect vor fi documentate în acest 
 Formatul este bazat pe [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 și acest proiect respectă [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-02-11
+
+### 🐛 Bug Fixes
+- **Schema configurare simplificată** - Folosește vol.All cu cv.ensure_list pentru listă de județe
+- **Eliminat cv.multi_select** - Care cauza probleme de validare în unele versiuni de Home Assistant
+- **Selector simplu** - Județe ca listă opțională validată cu vol.In
+
 ## [1.1.2] - 2026-02-11
 
 ### 🐛 Bug Fixes

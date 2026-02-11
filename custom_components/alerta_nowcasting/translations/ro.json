@@ -6,10 +6,11 @@
         "description": "Configurați integrarea pentru alertele meteo nowcasting.",
         "data": {
           "api_url": "URL API XML",
-          "counties": "Județe de monitorizat (opțional, lasă gol pentru toate)"
+          "counties": "Județe (opțional)"
         },
         "data_description": {
-          "counties": "Selectează județele pentru care dorești să primești alerte. Dacă nu selectezi niciun județ, vei primi alerte pentru toată țara."
+          "api_url": "URL-ul către fișierul XML cu alertele meteo nowcasting",
+          "counties": "Lista județelor de monitorizat. Lasă gol pentru toate județele."
         }
       }
     },

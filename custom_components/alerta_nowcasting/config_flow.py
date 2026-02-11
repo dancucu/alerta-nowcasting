@@ -26,21 +26,16 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Schema pentru validare
-def get_user_data_schema(user_input: dict[str, Any] | None = None) -> vol.Schema:
-    """Return the data schema for user input."""
-    return vol.Schema(
-        {
-            vol.Required(
-                CONF_API_URL, 
-                default=user_input.get(CONF_API_URL, DEFAULT_API_URL) if user_input else DEFAULT_API_URL
-            ): cv.string,
-            vol.Optional(
-                CONF_COUNTIES, 
-                default=user_input.get(CONF_COUNTIES, []) if user_input else []
-            ): cv.multi_select(ROMANIAN_COUNTIES),
-        }
-    )
+# Schema simplă pentru configurare
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_API_URL, default=DEFAULT_API_URL): cv.string,
+        vol.Optional(CONF_COUNTIES, default=[]): vol.All(
+            cv.ensure_list,
+            [vol.In(ROMANIAN_COUNTIES)]
+        ),
+    }
+)
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
@@ -109,7 +104,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         return self.async_show_form(
             step_id="user",
-            data_schema=get_user_data_schema(user_input),
+            data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
         )
 

@@ -6,10 +6,11 @@
         "description": "Configure the integration for weather nowcasting alerts.",
         "data": {
           "api_url": "XML API URL",
-          "counties": "Counties to monitor (optional, leave empty for all)"
+          "counties": "Counties (optional)"
         },
         "data_description": {
-          "counties": "Select the counties for which you want to receive alerts. If no counties are selected, you will receive alerts for the entire country."
+          "api_url": "URL to the XML file with nowcasting weather alerts",
+          "counties": "List of counties to monitor. Leave empty for all counties."
         }
       }
     },
