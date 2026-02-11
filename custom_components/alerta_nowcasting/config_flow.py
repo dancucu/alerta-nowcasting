@@ -83,6 +83,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Alerte Nowcasting."""
 
     VERSION = 1
+    
+    def __init__(self):
+        """Inițializează config flow."""
+        super().__init__()
+        self._api_url: str | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -97,8 +102,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(user_input[CONF_API_URL])
                 self._abort_if_unique_id_configured()
                 
-                # Salveaza URL-ul in context pentru pasul urmator
-                self.context["api_url"] = user_input[CONF_API_URL]
+                # Salveaza URL-ul in variabila de instanta pentru pasul urmator
+                self._api_url = user_input[CONF_API_URL]
                 # Merge la pasul de selectare judete
                 return await self.async_step_counties()
             except CannotConnect:
@@ -120,11 +125,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle county selection step."""
         if user_input is not None:
-            # Preiau URL-ul din contextul pasului anterior
-            api_url = self.context.get("api_url")
             # Combina datele din ambii pasi
             config_data = {
-                CONF_API_URL: api_url,
+                CONF_API_URL: self._api_url,
                 CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
             }
             return self.async_create_entry(title="Alerte Nowcasting", data=config_data)
