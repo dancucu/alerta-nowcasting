@@ -5,6 +5,19 @@ Toate modificările importante ale acestui proiect vor fi documentate în acest 
 Formatul este bazat pe [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 și acest proiect respectă [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-11
+
+### 🐛 Bug Fixes
+- **Instalare cu XML gol** - Integrarea poate fi acum instalată chiar dacă nu există alerte active
+- **Validare îmbunătățită** - Config flow acceptă API-uri care returnează XML-uri goale dar valide
+- **Logging îmbunătățit** - Mesaje de debug pentru parsarea XML-urilor goale
+- **Gestionare erori** - Tratare mai robustă a timeout-urilor și erorilor de conexiune
+
+### 📝 Modificări
+- XML-urile fără alerte nu mai cauzează erori de validare la instalare
+- Senzorul funcționează corect când nu există alerte meteo (afișează 0)
+- Log-uri informative când XML-ul este gol (comportament normal, nu eroare)
+
 ## [1.1.0] - 2026-02-11
 
 ### ✨ Adăugat

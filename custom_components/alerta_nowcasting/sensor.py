@@ -90,6 +90,9 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
             root = ET.fromstring(xml_data)
             alerts = []
             
+            # Log pentru debugging
+            _LOGGER.debug("Parsing XML. Root tag: %s, children count: %d", root.tag, len(list(root)))
+            
             # Parsare diferite structuri XML posibile
             for alert_elem in root.findall(".//avertizare") or root.findall(".//alert") or root.findall(".//warning"):
                 alert = self._parse_alert_element(alert_elem)
@@ -103,9 +106,16 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                     if alert:
                         alerts.append(alert)
             
+            # Log pentru rezultate
+            if not alerts:
+                _LOGGER.debug("No alerts found in XML. This is normal when there are no active weather warnings.")
+            else:
+                _LOGGER.debug("Found %d alert(s) in XML", len(alerts))
+            
             # Filtrare după județele selectate
             if self.selected_counties:
                 alerts = self._filter_alerts_by_counties(alerts)
+                _LOGGER.debug("After county filtering: %d alert(s)", len(alerts))
             
             # Filtrare alerte active
             now = dt_util.now()
@@ -123,6 +133,9 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
             
         except ET.ParseError as err:
             _LOGGER.error("Error parsing XML: %s", err)
+            return {"alerts": [], "active_alerts": [], "last_update": dt_util.now().isoformat()}
+        except Exception as err:
+            _LOGGER.error("Unexpected error parsing XML: %s", err)
             return {"alerts": [], "active_alerts": [], "last_update": dt_util.now().isoformat()}
 
     def _filter_alerts_by_counties(self, alerts: list[dict[str, Any]]) -> list[dict[str, Any]]:

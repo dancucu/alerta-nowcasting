@@ -54,15 +54,26 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
                         raise CannotConnect(f"HTTP {response.status}")
                     
                     xml_data = await response.text()
-                    # Verifică dacă XML-ul este valid
+                    # Verifică dacă XML-ul este valid (poate fi gol, e ok)
                     try:
-                        ET.fromstring(xml_data)
+                        root = ET.fromstring(xml_data)
+                        # XML-ul este valid, chiar dacă nu conține alerte
+                        _LOGGER.debug(
+                            "API connection successful. Root element: %s, children: %d",
+                            root.tag,
+                            len(list(root))
+                        )
                     except ET.ParseError as err:
                         raise InvalidXML(f"Invalid XML: {err}") from err
                     
     except aiohttp.ClientError as err:
         raise CannotConnect(f"Connection error: {err}") from err
+    except async_timeout.TimeoutError as err:
+        raise CannotConnect("Connection timeout") from err
+    except (InvalidXML, CannotConnect):
+        raise
     except Exception as err:
+        _LOGGER.exception("Unexpected error during validation")
         raise CannotConnect(f"Unexpected error: {err}") from err
     
     return {"title": DEFAULT_NAME}
