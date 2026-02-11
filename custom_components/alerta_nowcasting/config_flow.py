@@ -26,14 +26,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Schema cu URL și județe
+# Schema doar cu județe (URL e constant)
 STEP_USER_DATA_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_API_URL, default=DEFAULT_API_URL): cv.string,
-    }
-)
-
-STEP_COUNTIES_DATA_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_COUNTIES, default=[]): cv.multi_select(
             {county: county for county in sorted(ROMANIAN_COUNTIES)}
@@ -83,58 +77,26 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Alerte Nowcasting."""
 
     VERSION = 1
-    
-    def __init__(self):
-        """Inițializează config flow."""
-        super().__init__()
-        self._api_url: str | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step - API URL."""
-        errors: dict[str, str] = {}
-        
+        """Handle the initial step - Selectare județe."""
         if user_input is not None:
-            try:
-                info = await validate_input(self.hass, user_input)
-                
-                await self.async_set_unique_id(user_input[CONF_API_URL])
-                self._abort_if_unique_id_configured()
-                
-                # Salveaza URL-ul in variabila de instanta pentru pasul urmator
-                self._api_url = user_input[CONF_API_URL]
-                # Merge la pasul de selectare judete
-                return await self.async_step_counties()
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except InvalidXML:
-                errors["base"] = "invalid_xml"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
-        
-        return self.async_show_form(
-            step_id="user",
-            data_schema=STEP_USER_DATA_SCHEMA,
-            errors=errors,
-        )
-
-    async def async_step_counties(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Handle county selection step."""
-        if user_input is not None:
-            # Combina datele din ambii pasi
+            # Verifica unicitate basata pe URL (constant)
+            await self.async_set_unique_id(DEFAULT_API_URL)
+            self._abort_if_unique_id_configured()
+            
+            # Creaza entry cu URL default și județele selectate
             config_data = {
-                CONF_API_URL: self._api_url,
+                CONF_API_URL: DEFAULT_API_URL,
                 CONF_COUNTIES: user_input.get(CONF_COUNTIES, []),
             }
             return self.async_create_entry(title="Alerte Nowcasting", data=config_data)
         
         return self.async_show_form(
-            step_id="counties",
-            data_schema=STEP_COUNTIES_DATA_SCHEMA,
+            step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
         )
 
 
