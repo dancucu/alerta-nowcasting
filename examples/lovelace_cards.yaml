@@ -1,0 +1,234 @@
+# Exemple de carduri Lovelace pentru Alerte Nowcasting
+# Copie în dashboard-ul tău Lovelace (UI sau YAML mode)
+
+# Card 1: Card simplu pentru alerte active (Entity Card)
+# Mostrează numărul de alerte active și detalii de bază
+type: entity
+entity: sensor.alerta_nowcasting
+name: Alerte Meteo Nowcasting
+icon: mdi:weather-cloudy-alert
+state_color: true
+
+---
+
+# Card 2: Card detaliat cu toate informațiile (Entities Card)
+type: entities
+title: 🌩️ Alerte Meteo Nowcasting
+entities:
+  - entity: sensor.alerta_nowcasting
+    name: Alerte active
+    icon: mdi:weather-cloudy-alert
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: configured_counties
+    name: Județe monitorizate
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: alert_title
+    name: Titlu alertă
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: phenomena
+    name: Fenomen
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: severity
+    name: Severitate
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: counties
+    name: Județe afectate
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: alert_start
+    name: Început
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: alert_end
+    name: Sfârșit
+  - type: attribute
+    entity: sensor.alerta_nowcasting
+    attribute: last_update
+    name: Actualizat la
+state_color: true
+
+---
+
+# Card 3: Card Markdown cu formatare customizată
+type: markdown
+title: 🌩️ Alerta Meteo
+content: >
+  {% set alerts = state_attr('sensor.alerta_nowcasting', 'active_alerts') %}
+  {% set configured = state_attr('sensor.alerta_nowcasting', 'configured_counties') %}
+  
+  {% if configured != 'toate' %}
+  **🗺️ Monitorizare:** {{ configured | join(', ') }}
+  
+  ---
+  {% endif %}
+  
+  {% if alerts > 0 %}
+    ## ⚠️ {{ alerts }} alertă(e) activă(e)!
+    
+    **{{ state_attr('sensor.alerta_nowcasting', 'alert_title') }}**
+    
+    📍 **Județe:** {{ state_attr('sensor.alerta_nowcasting', 'counties') | join(', ') }}
+    
+    🌪️ **Fenomen:** {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}
+    
+    🚨 **Severitate:** {{ state_attr('sensor.alerta_nowcasting', 'severity') | upper }}
+    
+    ⏰ **Început:** {{ state_attr('sensor.alerta_nowcasting', 'alert_start') | as_timestamp | timestamp_custom('%d.%m.%Y %H:%M') }}
+    
+    ⏱️ **Sfârșit:** {{ state_attr('sensor.alerta_nowcasting', 'alert_end') | as_timestamp | timestamp_custom('%d.%m.%Y %H:%M') }}
+    
+    ---
+    
+    {{ state_attr('sensor.alerta_nowcasting', 'alert_description') }}
+  {% else %}
+    ## ✅ Nicio alertă activă
+    
+    Nu există fenomene meteo periculoase în acest moment{% if configured != 'toate' %} pentru județele monitorizate{% endif %}.
+    
+    *Actualizat: {{ state_attr('sensor.alerta_nowcasting', 'last_update') | as_timestamp | timestamp_custom('%d.%m.%Y %H:%M') }}*
+  {% endif %}
+
+---
+
+# Card 4: Card condiționat - apare doar când există alerte (Conditional Card)
+type: conditional
+conditions:
+  - condition: numeric_state
+    entity: sensor.alerta_nowcasting
+    above: 0
+card:
+  type: markdown
+  content: >
+    # 🚨 ALERTĂ METEO ACTIVĂ!
+    
+    ## {{ state_attr('sensor.alerta_nowcasting', 'alert_title') }}
+    
+    {{ state_attr('sensor.alerta_nowcasting', 'alert_description') }}
+    
+    **Județe afectate:** {{ state_attr('sensor.alerta_nowcasting', 'counties') | join(', ') }}
+  card_mod:
+    style: |
+      ha-card {
+        background: rgba(255, 87, 34, 0.1);
+        border: 2px solid #ff5722;
+      }
+
+---
+
+# Card 5: Card cu grafic istoric (History Graph)
+type: history-graph
+title: Istoric Alerte Meteo
+entities:
+  - entity: sensor.alerta_nowcasting
+hours_to_show: 48
+refresh_interval: 300
+
+---
+
+# Card 6: Card cu buton pentru refresh manual (Button Card - necesită card-mod)
+type: button
+name: Actualizează Alerte
+icon: mdi:refresh
+tap_action:
+  action: call-service
+  service: homeassistant.update_entity
+  service_data:
+    entity_id: sensor.alerta_nowcasting
+show_state: true
+entity: sensor.alerta_nowcasting
+
+---
+
+# Card 7: Card grid complet cu toate informațiile (Grid Card)
+type: grid
+columns: 2
+square: false
+cards:
+  - type: gauge
+    entity: sensor.alerta_nowcasting
+    name: Alerte Active
+    needle: true
+    min: 0
+    max: 5
+    severity:
+      green: 0
+      yellow: 1
+      red: 2
+  
+  - type: entity
+    entity: sensor.alerta_nowcasting
+    name: Status Alerte
+    attribute: severity
+    icon: mdi:alert-circle
+  
+  - type: entity
+    entity: sensor.alerta_nowcasting
+    attribute: phenomena
+    name: Fenomen Meteo
+    icon: mdi:weather-lightning
+  
+  - type: entity
+    entity: sensor.alerta_nowcasting
+    attribute: alert_end
+    name: Sfârșit Alertă
+    icon: mdi:clock-end
+
+---
+
+# Card 8: Card cu notificări persistente (Alert Card - Custom card)
+# Necesită: https://github.com/thomasloven/lovelace-card-mod
+type: custom:mod-card
+style: |
+  {% if states('sensor.alerta_nowcasting') | int > 0 %}
+    ha-card {
+      background: linear-gradient(135deg, #ff5722 0%, #ff9800 100%);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+  {% endif %}
+card:
+  type: entities
+  title: 🚨 Centru Alerte Meteo
+  entities:
+    - sensor.alerta_nowcasting
+    - type: attribute
+      entity: sensor.alerta_nowcasting
+      attribute: alert_title
+      name: Alertă curentă
+    - type: attribute
+      entity: sensor.alerta_nowcasting
+      attribute: counties
+      name: Județe
+
+---
+
+# Card 9: Mini Graph Card pentru trend (necesită mini-graph-card)
+# https://github.com/kalkih/mini-graph-card
+type: custom:mini-graph-card
+entities:
+  - sensor.alerta_nowcasting
+name: Trend Alerte Meteo
+hours_to_show: 24
+points_per_hour: 4
+line_width: 2
+font_size: 75
+animate: true
+show:
+  state: true
+  icon: true
+color_thresholds:
+  - value: 0
+    color: "#4caf50"
+  - value: 1
+    color: "#ff9800"
+  - value: 2
+    color: "#f44336"

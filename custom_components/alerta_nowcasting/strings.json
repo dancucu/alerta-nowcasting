@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurare Alerte Nowcasting",
+        "description": "Configurați integrarea pentru alertele meteo nowcasting.",
+        "data": {
+          "api_url": "URL API XML",
+          "counties": "Județe de monitorizat (opțional, lasă gol pentru toate)"
+        },
+        "data_description": {
+          "counties": "Selectează județele pentru care dorești să primești alerte. Dacă nu selectezi niciun județ, vei primi alerte pentru toată țara."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nu s-a putut conecta la API. Verificați URL-ul.",
+      "invalid_xml": "XML-ul primit nu este valid.",
+      "unknown": "Eroare neașteptată"
+    },
+    "abort": {
+      "already_configured": "Această configurație este deja adăugată."
+    }
+  }
+}

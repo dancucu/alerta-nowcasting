@@ -1,0 +1,353 @@
+# Exemple de Automatizări cu Filtrare pe Județe
+
+Acestea sunt exemple de automatizări care folosesc filtrarea pe județe pentru notificări personalizate.
+
+## 📍 Notificări personalizate pentru zona București
+
+```yaml
+automation:
+  - id: alerta_bucuresti_start
+    alias: "Alertă Meteo București - Început"
+    description: "Notificare specifică pentru alertele din București și Ilfov"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int > 0 }}"
+      # Verifică dacă alerta afectează București sau Ilfov
+      - condition: template
+        value_template: >
+          {% set counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+          {{ 'București' in counties or 'Ilfov' in counties }}
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "🌩️ ALERTĂ METEO BUCUREȘTI!"
+          message: >
+            {{ state_attr('sensor.alerta_nowcasting', 'alert_title') }}
+            
+            Fenomen: {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}
+            
+            Sfârșitul alertei: {{ state_attr('sensor.alerta_nowcasting', 'alert_end') | as_timestamp | timestamp_custom('%H:%M') }}
+          data:
+            priority: high
+            color: "#ff5722"
+            tag: bucuresti_weather_alert
+```
+
+## 🏔️ Automatizare pentru alertă de munte (ieșire weekend)
+
+```yaml
+automation:
+  - id: alerta_weekend_munte
+    alias: "Alertă Meteo Munte - Weekend"
+    description: "Notificare vineri seara pentru alertele meteo la munte în weekend"
+    trigger:
+      - platform: time
+        at: "18:00:00"
+    condition:
+      # Doar vineri
+      - condition: time
+        weekday:
+          - fri
+      # Verifică dacă există alerte pentru zone montane
+      - condition: template
+        value_template: >
+          {% set counties = ['Brașov', 'Prahova', 'Argeș', 'Vâlcea'] %}
+          {% set alerts = state_attr('sensor.alerta_nowcasting', 'alerts') %}
+          {% set weekend_alerts = namespace(found=false) %}
+          {% for alert in alerts %}
+            {% if alert.counties is defined %}
+              {% for county in alert.counties %}
+                {% if county in counties %}
+                  {% set weekend_alerts.found = true %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+          {{ weekend_alerts.found }}
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "⛰️ Atenție - Alertă Meteo la Munte!"
+          message: >
+            Există alerte meteo în zonele montane pentru acest weekend.
+            Verifică condițiile înainte de plecare!
+          data:
+            actions:
+              - action: "VIEW_ALERTS"
+                title: "Vezi detalii"
+              - action: "DISMISS"
+                title: "OK"
+```
+
+## 🚗 Alertă pentru rută de călătorie
+
+```yaml
+automation:
+  - id: alerta_ruta_calatorie
+    alias: "Alertă Meteo Rută - București → Cluj"
+    description: "Verifică alertele pe traseul București - Cluj"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int > 0 }}"
+      # Verifică dacă alerta afectează județele de pe traseu
+      - condition: template
+        value_template: >
+          {% set route_counties = ['București', 'Ilfov', 'Prahova', 'Brașov', 'Sibiu', 'Alba', 'Cluj'] %}
+          {% set alert_counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+          {% set on_route = namespace(found=false) %}
+          {% for county in alert_counties %}
+            {% if county in route_counties %}
+              {% set on_route.found = true %}
+            {% endif %}
+          {% endfor %}
+          {{ on_route.found }}
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "🚗 Alertă pe Traseu București → Cluj"
+          message: >
+            Alertă meteo pe traseul tău obișnuit!
+            
+            Județe afectate: {{ state_attr('sensor.alerta_nowcasting', 'counties') | join(', ') }}
+            
+            Fenomen: {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}
+            
+            Adaptează viteza și fii precaut!
+          data:
+            priority: high
+```
+
+## 🏖️ Alertă specială pentru litoral (vacanță)
+
+```yaml
+automation:
+  - id: alerta_litoral_vacanta
+    alias: "Alertă Meteo Litoral - Vacanță"
+    description: "Notifică despre alertele meteo la mare când ești în vacanță"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      # Verifică dacăești în vacanță (folosind input_boolean ca exemplu)
+      - condition: state
+        entity_id: input_boolean.vacanta_litoral
+        state: "on"
+      # Verifică alertele pe litoral
+      - condition: template
+        value_template: >
+          {% set coastal_counties = ['Constanța', 'Tulcea'] %}
+          {% set alert_counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+          {{ coastal_counties | select('in', alert_counties) | list | length > 0 }}
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "🌊 Alertă Meteo Litoral!"
+          message: >
+            Atenție la mare!
+            
+            {{ state_attr('sensor.alerta_nowcasting', 'alert_title') }}
+            
+            {{ state_attr('sensor.alerta_nowcasting', 'alert_description') }}
+          data:
+            priority: high
+            tag: coastal_alert
+            actions:
+              - action: "CHECK_BEACH"
+                title: "Verifică plaja"
+```
+
+## 🏢 Alertă pentru multiple locații de afaceri
+
+```yaml
+automation:
+  - id: alerta_afaceri_multiple
+    alias: "Alertă Meteo Afaceri - Multiple Locații"
+    description: "Notifică pentru alertele în județele unde ai afaceri"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int > 0 }}"
+    action:
+      # Identifică care dintre locații sunt afectate
+      - service: notify.mobile_app
+        data:
+          title: "🏢 Alertă Meteo - Locații Afaceri"
+          message: >
+            {% set business_locations = {
+              'București': 'Sediu Central',
+              'Cluj': 'Birou Cluj',
+              'Timișoara': 'Reprezentanță Vest',
+              'Iași': 'Birou Moldova'
+            } %}
+            {% set alert_counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+            {% set affected = namespace(list=[]) %}
+            {% for county, location in business_locations.items() %}
+              {% if county in alert_counties %}
+                {% set affected.list = affected.list + [location] %}
+              {% endif %}
+            {% endfor %}
+            
+            Alerte meteo la: {{ affected.list | join(', ') }}
+            
+            Fenomen: {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}
+            
+            Perioada: {{ state_attr('sensor.alerta_nowcasting', 'alert_start') | as_timestamp | timestamp_custom('%H:%M') }} - {{ state_attr('sensor.alerta_nowcasting', 'alert_end') | as_timestamp | timestamp_custom('%H:%M') }}
+```
+
+## 🌾 Alertă agricolă (ferme în multiple județe)
+
+```yaml
+automation:
+  - id: alerta_agricola
+    alias: "Alertă Meteo Agricolă"
+    description: "Notifică despre fenomene care afectează culturile"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int > 0 }}"
+      # Verifică județele cu ferme
+      - condition: template
+        value_template: >
+          {% set farm_counties = ['Teleorman', 'Olt', 'Călărași'] %}
+          {% set alert_counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+          {{ farm_counties | select('in', alert_counties) | list | length > 0 }}
+      # Verifică fenomene relevante pentru agricultură
+      - condition: template
+        value_template: >
+          {% set phenomena = state_attr('sensor.alerta_nowcasting', 'phenomena') | lower %}
+          {{ 'grindina' in phenomena or 'vant' in phenomena or 'polei' in phenomena }}
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "🌾 ALERTĂ AGRICOLĂ!"
+          message: >
+            Atenție! Fenomen care poate afecta culturile:
+            
+            {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}
+            
+            Județe: {{ state_attr('sensor.alerta_nowcasting', 'counties') | join(', ') }}
+            
+            Ia măsuri de protecție!
+          data:
+            priority: high
+            color: "#ff9800"
+```
+
+## 🚨 Alertă cod roșu pentru zona ta
+
+```yaml
+automation:
+  - id: alerta_cod_rosu_local
+    alias: "Alertă COD ROȘU - Zona Mea"
+    description: "Notificare critică pentru cod roșu în județul tau"
+    trigger:
+      - platform: state
+        entity_id: sensor.alerta_nowcasting
+    condition:
+      # Verifică severitate roșie
+      - condition: template
+        value_template: "{{ state_attr('sensor.alerta_nowcasting', 'severity') == 'red' }}"
+      # Verifică județul tău (exemplu: București)
+      - condition: template
+        value_template: >
+          {% set my_county = 'București' %}
+          {% set alert_counties = state_attr('sensor.alerta_nowcasting', 'counties') %}
+          {{ my_county in alert_counties }}
+    action:
+      # Notificare critică
+      - service: notify.mobile_app
+        data:
+          title: "🚨🚨 COD ROȘU METEO! 🚨🚨"
+          message: >
+            PERICOL MAXIM!
+            
+            {{ state_attr('sensor.alerta_nowcasting', 'alert_title') }}
+            
+            {{ state_attr('sensor.alerta_nowcasting', 'alert_description') }}
+            
+            Rămâi în siguranță!
+          data:
+            priority: high
+            ttl: 0
+            channel: Emergency
+            color: "#d32f2f"
+      
+      # Aprinde lumini roșii intermitent (opțional)
+      - repeat:
+          count: 5
+          sequence:
+            - service: light.turn_on
+              target:
+                entity_id: light.all_lights
+              data:
+                brightness: 255
+                rgb_color: [255, 0, 0]
+            - delay: "00:00:01"
+            - service: light.turn_off
+              target:
+                entity_id: light.all_lights
+            - delay: "00:00:01"
+      
+      # Anunț vocal (opțional)
+      - service: tts.google_translate_say
+        data:
+          entity_id: media_player.all_speakers
+          message: >
+            Atenție! Cod roșu meteo în București!
+            {{ state_attr('sensor.alerta_nowcasting', 'phenomena') }}!
+            Rămâi în siguranță și evită deplasările!
+```
+
+## 💡 Sfaturi pentru personalizare
+
+### Modifică județele
+Înlocuiește județele din exemple cu cele care te interesează:
+```yaml
+{% set my_counties = ['Județul1', 'Județul2'] %}
+```
+
+### Ajustează severitatea
+Poți filtra doar anumite niveluri:
+```yaml
+# Doar cod portocaliu și roșu
+condition:
+  - condition: template
+    value_template: >
+      {% set severity = state_attr('sensor.alerta_nowcasting', 'severity') %}
+      {{ severity in ['orange', 'red'] }}
+```
+
+### Filtrează fenomene specifice
+```yaml
+# Doar pentru grindină și viscol
+condition:
+  - condition: template
+    value_template: >
+      {% set phenomena = state_attr('sensor.alerta_nowcasting', 'phenomena') | lower %}
+      {{ 'grindina' in phenomena or 'viscol' in phenomena }}
+```
+
+### Combină cu alte senzori
+```yaml
+# Notifică doar dacă ești acasă
+condition:
+  - condition: state
+    entity_id: person.nume
+    state: 'home'
+```
+
+## 🔗 Referințe
+
+- Vezi [automations.yaml](automations.yaml) pentru automatizări de bază
+- Vezi [COUNTIES_EXAMPLES.md](../COUNTIES_EXAMPLES.md) pentru configurări pe județe
+- Vezi documentația Home Assistant pentru [Template Conditions](https://www.home-assistant.io/docs/scripts/conditions/#template-condition)

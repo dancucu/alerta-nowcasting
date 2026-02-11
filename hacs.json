@@ -1,0 +1,5 @@
+{
+  "name": "Alerte Nowcasting Meteo",
+  "render_readme": true,
+  "domains": ["sensor"]
+}

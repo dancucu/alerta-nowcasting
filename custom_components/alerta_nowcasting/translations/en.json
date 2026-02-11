@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Nowcasting Alerts",
+        "description": "Configure the integration for weather nowcasting alerts.",
+        "data": {
+          "api_url": "XML API URL",
+          "counties": "Counties to monitor (optional, leave empty for all)"
+        },
+        "data_description": {
+          "counties": "Select the counties for which you want to receive alerts. If no counties are selected, you will receive alerts for the entire country."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the API. Check the URL.",
+      "invalid_xml": "The received XML is invalid.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This configuration is already added."
+    }
+  }
+}
