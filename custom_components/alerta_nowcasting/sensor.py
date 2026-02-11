@@ -111,15 +111,16 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
             
             # Parsare alerte din noul format API (cu atribute)
             for alert_elem in root.findall(".//avertizare"):
-                alert = self._parse_alert_element(alert_elem)
-                if alert:
-                    alerts.append(alert)
+                alert_list = self._parse_alert_element(alert_elem)
+                if alert_list:
+                    # _parse_alert_element acum returnează lista de alerte (una per județ)
+                    alerts.extend(alert_list)
             
             # Log pentru rezultate
             if not alerts:
                 _LOGGER.debug("No alerts found in XML. This is normal when there are no active weather warnings.")
             else:
-                _LOGGER.debug("Found %d alert(s) in XML", len(alerts))
+                _LOGGER.debug("Found %d alert(s) in XML (split by county)", len(alerts))
             
             # Filtrare după județele selectate
             if self.selected_counties:
@@ -167,8 +168,8 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
         """Normalize county name for comparison (lowercase, strip whitespace)."""
         return county.strip().lower()
 
-    def _parse_alert_element(self, element: ET.Element) -> dict[str, Any] | None:
-        """Parse an avertizare XML element with attributes."""
+    def _parse_alert_element(self, element: ET.Element) -> list[dict[str, Any]] | None:
+        """Parse an avertizare XML element with attributes and split by county."""
         try:
             # Extrage toate atributele din noul format API
             tip_mesaj = element.get("tipMesaj", "")
@@ -190,31 +191,21 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
             # Extragere județe din câmpul zona
             counties = self._extract_counties_from_zona(zona)
             
-            # Construire dicționar alert
-            alert = {
-                "id": f"{creat}_{culoare}_{tip_mesaj}",
-                "title": f"{nume_tip_mesaj} - Cod {nume_culoare}",
-                "description": semnalare,
-                "severity": nume_culoare.lower(),
-                "severity_level": SEVERITY_LEVELS.get(nume_culoare.lower(), "unknown"),
-                "color_code": culoare,
-                "message_type": tip_mesaj,
-                "message_type_name": nume_tip_mesaj,
-                "counties": counties,
-                "zona": zona,
-                "created": creat,
-                "modified": modificat,
-            }
+            # Dacă nu s-au găsit județe, returnează o singură alertă cu zona completă
+            if not counties:
+                _LOGGER.debug("No counties extracted from zona: %s", zona)
+                counties = ["Necunoscut"]
             
-            # Parsare date și ore - adaugă timezone dacă lipsește
+            # Parsare date și ore - se face o singură dată
+            start_time = None
+            end_time = None
+            
             if data_inceput:
                 try:
-                    # Format: "2026-02-11T21:15"
                     dt = dt_util.parse_datetime(data_inceput)
                     if dt and dt.tzinfo is None:
-                        # Dacă nu are timezone, adaugă Europe/Bucharest
                         dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
-                    alert["start_time"] = dt
+                    start_time = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse start time '%s': %s", data_inceput, err)
             
@@ -222,18 +213,45 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                 try:
                     dt = dt_util.parse_datetime(data_sfarsit)
                     if dt and dt.tzinfo is None:
-                        # Dacă nu are timezone, adaugă Europe/Bucharest
                         dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
-                    alert["end_time"] = dt
+                    end_time = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse end time '%s': %s", data_sfarsit, err)
             
             # Detectare fenomen din descriere
             phenomena = self._detect_phenomena(semnalare.lower())
-            if phenomena:
-                alert["phenomena"] = phenomena
             
-            return alert
+            # Creează alerte separate pentru fiecare județ
+            alerts = []
+            for county in counties:
+                # Construire zona specifică pentru acest județ
+                county_zona = f"Județul {county}"
+                
+                # Construire dicționar alert specific județului
+                alert = {
+                    "id": f"{creat}_{culoare}_{tip_mesaj}_{county}",
+                    "title": f"{nume_tip_mesaj} - Cod {nume_culoare}",
+                    "description": semnalare,
+                    "severity": nume_culoare.lower(),
+                    "severity_level": SEVERITY_LEVELS.get(nume_culoare.lower(), "unknown"),
+                    "color_code": culoare,
+                    "message_type": tip_mesaj,
+                    "message_type_name": nume_tip_mesaj,
+                    "counties": [county],  # Doar acest județ
+                    "zona": county_zona,    # Zona simplificată pentru acest județ
+                    "zona_original": zona,  # Păstrează zona originală pentru referință
+                    "created": creat,
+                    "modified": modificat,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                }
+                
+                if phenomena:
+                    alert["phenomena"] = phenomena
+                
+                alerts.append(alert)
+            
+            return alerts
             
         except Exception as err:
             _LOGGER.error("Error parsing alert element: %s", err)
