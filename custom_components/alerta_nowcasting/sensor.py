@@ -317,12 +317,27 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         self._attr_icon = "mdi:weather-cloudy-alert"
 
     @property
-    def native_value(self) -> int:
-        """Return the state of the sensor - count of active alerts for this county."""
+    def native_value(self) -> str:
+        """Return the state of the sensor - color code of active alerts for this county."""
         if self.coordinator.data:
             active_alerts = self._get_county_alerts(self.coordinator.data.get("active_alerts", []))
-            return len(active_alerts)
-        return 0
+            if active_alerts:
+                # Returnează codul de culoare din prima alertă activă
+                # Exemplu: "Galben", "Portocaliu", "Roșu"
+                first_alert = active_alerts[0]
+                color_name = first_alert.get("severity", "").capitalize()
+                
+                # Mapez códurile invers: galben -> Galben, portocaliu -> Portocaliu, rosu -> Roșu
+                color_map = {
+                    "galben": "Galben",
+                    "portocaliu": "Portocaliu",
+                    "rosu": "Roșu",
+                }
+                
+                severity = first_alert.get("severity", "")
+                return color_map.get(severity, "Necunoscut")
+        
+        return "Ok"
 
     def _get_county_alerts(self, alerts: list[dict]) -> list[dict]:
         """Filter alerts for this county."""
