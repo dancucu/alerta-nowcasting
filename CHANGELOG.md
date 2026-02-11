@@ -5,6 +5,24 @@ Toate modificările importante ale acestui proiect vor fi documentate în acest 
 Formatul este bazat pe [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 și acest proiect respectă [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-11
+
+### 🔧 Major Fix - Eroare 500 Internal Server
+- **Rezolvat eroarea "Config flow could not be loaded: 500"** - Cauza era async_timeout deprecat
+- **asyncio.timeout** - Înlocuit async_timeout cu asyncio.timeout (standard Python 3.11+)
+- **Schema simplificată** - Doar URL în configurare inițială (județele vor veni în viitor)
+- **Import-uri curate** - Eliminat async_timeout deprecated
+- **Gestionare robustă** - Coordinator gestionează lipsa CONF_COUNTIES din config
+
+### ⚠️ Breaking Changes
+- Selectorul de județe a fost temporar eliminat din configurare (va reveni într-o versiune viitoare)
+- Configurările existente rămân funcționale, dar vor afișa toate alertele
+
+### 🎯 Acum funcționează
+- Instalare fără erori
+- Config flow se încarcă corect
+- Validare API funcțională
+
 ## [1.1.3] - 2026-02-11
 
 ### 🐛 Bug Fixes

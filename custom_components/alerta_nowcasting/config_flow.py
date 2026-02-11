@@ -1,12 +1,12 @@
 """Config flow for Alerte Nowcasting integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 import xml.etree.ElementTree as ET
 
 import aiohttp
-import async_timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -18,22 +18,16 @@ from homeassistant.helpers import config_validation as cv
 from .const import (
     DOMAIN,
     CONF_API_URL,
-    CONF_COUNTIES,
     DEFAULT_API_URL,
     DEFAULT_NAME,
-    ROMANIAN_COUNTIES,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-# Schema simplă pentru configurare
+# Schema simplificată - doar URL pentru început
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_API_URL, default=DEFAULT_API_URL): cv.string,
-        vol.Optional(CONF_COUNTIES, default=[]): vol.All(
-            cv.ensure_list,
-            [vol.In(ROMANIAN_COUNTIES)]
-        ),
     }
 )
 
@@ -43,7 +37,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     api_url = data[CONF_API_URL]
     
     try:
-        async with async_timeout.timeout(10):
+        async with asyncio.timeout(10):
             async with aiohttp.ClientSession() as session:
                 async with session.get(api_url) as response:
                     if response.status != 200:
@@ -64,7 +58,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
                     
     except aiohttp.ClientError as err:
         raise CannotConnect(f"Connection error: {err}") from err
-    except async_timeout.TimeoutError as err:
+    except TimeoutError as err:
         raise CannotConnect("Connection timeout") from err
     except (InvalidXML, CannotConnect):
         raise

@@ -46,6 +46,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Alerte Nowcasting sensor."""
     api_url = entry.data.get(CONF_API_URL)
+    # CONF_COUNTIES este opțional - poate să nu existe în config
     selected_counties = entry.data.get(CONF_COUNTIES, [])
     
     coordinator = AlerteNowcastingCoordinator(hass, api_url, selected_counties)
