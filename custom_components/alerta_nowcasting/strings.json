@@ -20,7 +20,25 @@
       "unknown": "Eroare neașteptată"
     },
     "abort": {
-      "already_configured": "Această configurație este deja adăugată."
+      "already_configured": "Această configurație este deja adăugată.",
+      "reconfigure_successful": "Județele au fost actualizate. Integrarea se va reîncărca automat."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modifică județele monitorizate",
+        "description": "Selectează județele pentru care dorești să primești alerte.",
+        "data": {
+          "counties": "Județe"
+        },
+        "data_description": {
+          "counties": "Selectează una sau mai multe județe. Pentru fiecare județ va fi creat un senzor separat."
+        }
+      }
+    },
+    "abort": {
+      "reconfigure_successful": "Județele au fost actualizate cu succes! Integrarea va fi reîncărcată automat."
     }
   }
 }
