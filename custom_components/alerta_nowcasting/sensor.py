@@ -397,6 +397,19 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             return value
         return value
 
+    def _format_ro_time(self, value: str) -> str | None:
+        """Format datetime string to time only (HH:MM)."""
+        if not value:
+            return None
+        try:
+            dt = dt_util.parse_datetime(value)
+            if dt:
+                dt = dt_util.as_local(dt)
+                return dt.strftime("%H:%M")
+        except Exception:
+            return value
+        return value
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
@@ -425,8 +438,8 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         if first_alert:
             # Atribute RAW din API
             attributes["Culoare"] = first_alert.get("numeCuloare", "")
-            attributes["dataInceput"] = self._format_ro_datetime(first_alert.get("dataInceput", ""))
-            attributes["dataSfarsit"] = self._format_ro_datetime(first_alert.get("dataSfarsit", ""))
+            attributes["Inceput"] = self._format_ro_time(first_alert.get("dataInceput", ""))
+            attributes["Sfarsit"] = self._format_ro_time(first_alert.get("dataSfarsit", ""))
             attributes["semnalare"] = first_alert.get("semnalare", "")
             # Filtrează zona să conțină doar județul curent
             zona_full = first_alert.get("zona_api", "")
@@ -441,11 +454,11 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
             # Când nu există deloc alerte pentru acest județ
-            attributes["Culoare"] = None
-            attributes["dataInceput"] = None
-            attributes["dataSfarsit"] = None
-            attributes["semnalare"] = None
-            attributes["zona"] = None
+            attributes["Culoare"] = "verde"
+            attributes["Inceput"] = "-"
+            attributes["Sfarsit"] = "-"
+            attributes["semnalare"] = "Nu e cazul"
+            attributes["zona"] = self.county
             self._attr_icon = "mdi:weather-cloudy"
         
         return attributes
