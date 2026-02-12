@@ -244,6 +244,12 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                     "modified": modificat,
                     "start_time": start_time,
                     "end_time": end_time,
+                    # Valori RAW din API pentru atribute
+                    "dataInceput": data_inceput,
+                    "dataSfarsit": data_sfarsit,
+                    "numeCuloare": nume_culoare,
+                    "semnalare": semnalare,
+                    "zona_api": zona,
                 }
                 
                 if phenomena:
@@ -381,34 +387,18 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         if active_alerts:
             first_alert = active_alerts[0]
             
-            # Cod culoare
-            color_map = {
-                "galben": "Galben",
-                "portocaliu": "Portocaliu",
-                "rosu": "Roșu",
-            }
-            severity = first_alert.get("severity", "")
-            attributes["culoare"] = color_map.get(severity, "Necunoscut")
-            
-            # Interval de timp
-            if first_alert.get("start_time") and first_alert.get("end_time"):
-                attributes["interval"] = f"{first_alert['start_time'].strftime('%Y-%m-%d %H:%M')} - {first_alert['end_time'].strftime('%Y-%m-%d %H:%M')}"
-                attributes["data_inceput"] = first_alert["start_time"].isoformat()
-                attributes["data_sfarsit"] = first_alert["end_time"].isoformat()
-            
-            # Zone afectate
-            attributes["zona"] = first_alert.get("zona", "")
-            attributes["zona_originala"] = first_alert.get("zona_original", "")
-            attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
-            
-            # Fenomene
-            attributes["fenomen"] = first_alert.get("phenomena", "default")
-            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
+            # Atribute RAW din API
+            attributes["numeCuloare"] = first_alert.get("numeCuloare", "")
+            attributes["dataInceput"] = first_alert.get("dataInceput", "")
+            attributes["dataSfarsit"] = first_alert.get("dataSfarsit", "")
+            attributes["semnalare"] = first_alert.get("semnalare", "")
+            attributes["zona"] = first_alert.get("zona_api", "")
             
             # Alte informații utile
+            attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
+            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
             attributes[ATTR_SEVERITY] = first_alert.get("severity_level", "unknown")
             attributes["titlu"] = first_alert.get("title", "")
-            attributes["descriere"] = first_alert.get("description", "")
             attributes["tip_mesaj"] = first_alert.get("message_type_name", "")
             
             # Setează iconița în funcție de fenomen
@@ -416,10 +406,11 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
             # Când nu există alerte active
-            attributes["culoare"] = None
-            attributes["interval"] = None
+            attributes["numeCuloare"] = None
+            attributes["dataInceput"] = None
+            attributes["dataSfarsit"] = None
+            attributes["semnalare"] = None
             attributes["zona"] = None
-            attributes["fenomen"] = None
             self._attr_icon = "mdi:weather-cloudy"
         
         return attributes
