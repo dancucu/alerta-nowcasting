@@ -437,7 +437,13 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         
         if first_alert:
             # Atribute RAW din API
-            attributes["Culoare"] = first_alert.get("numeCuloare", "")
+            culoare_raw = first_alert.get("numeCuloare", "")
+            culoare_map = {
+                "galben": "galben",
+                "portocaliu": "portocaliu",
+                "rosu": "roșu",
+            }
+            attributes["Culoare"] = culoare_map.get(culoare_raw, culoare_raw)
             attributes["Început"] = self._format_ro_time(first_alert.get("dataInceput", ""))
             attributes["Sfârșit"] = self._format_ro_time(first_alert.get("dataSfarsit", ""))
             attributes["semnalare"] = first_alert.get("semnalare", "")
@@ -446,8 +452,22 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             attributes["Zone"] = self._filter_zona_for_county(zona_full, self.county)
             
             # Alte informații utile
-            attributes["Fenomene"] = first_alert.get("phenomena", "default")
-            attributes["titlu"] = first_alert.get("title", "")
+            phenomena_raw = first_alert.get("phenomena", "default")
+            phenomena_map = {
+                "ceata": "ceață",
+                "polei": "polei",
+                "ninsoare": "ninsoare",
+                "viscol": "viscol",
+                "ploi_torentiale": "ploi torențiale",
+                "grindina": "grindină",
+                "vijelie": "vijelie",
+                "fulger": "fulgere",
+                "vant_puternic": "vânt puternic",
+                "instabilitate": "instabilitate",
+                "default": "-",
+            }
+            attributes["Fenomene"] = phenomena_map.get(phenomena_raw, phenomena_raw)
+            attributes["Titlu"] = first_alert.get("title", "")
             
             # Setează iconița în funcție de fenomen
             phenomena = first_alert.get("phenomena", "default")
