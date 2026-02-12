@@ -467,7 +467,9 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
                 "default": "-",
             }
             attributes["Fenomene"] = phenomena_map.get(phenomena_raw, phenomena_raw)
-            attributes["Titlu"] = first_alert.get("title", "")
+            title_raw = first_alert.get("title", "")
+            title_fixed = title_raw.replace("Atentionare", "Atenționare")
+            attributes["Titlu"] = title_fixed
             
             # Setează iconița în funcție de fenomen
             phenomena = first_alert.get("phenomena", "default")
