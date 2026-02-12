@@ -28,7 +28,6 @@ from .const import (
     CONF_COUNTIES,
     DEFAULT_SCAN_INTERVAL,
     ATTR_ACTIVE_ALERTS,
-    ATTR_PHENOMENA,
     ATTR_LAST_UPDATE,
     PHENOMENA_ICONS,
     PHENOMENA_TYPES,
@@ -411,7 +410,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         
         attributes = {
             ATTR_ACTIVE_ALERTS: len(active_alerts),
-            ATTR_LAST_UPDATE: data.get("last_update"),
+            ATTR_LAST_UPDATE: self._format_ro_datetime(data.get("last_update", "")),
             "Județ": self.county,
         }
         
@@ -425,7 +424,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         
         if first_alert:
             # Atribute RAW din API
-            attributes["numeCuloare"] = first_alert.get("numeCuloare", "")
+            attributes["Culoare"] = first_alert.get("numeCuloare", "")
             attributes["dataInceput"] = self._format_ro_datetime(first_alert.get("dataInceput", ""))
             attributes["dataSfarsit"] = self._format_ro_datetime(first_alert.get("dataSfarsit", ""))
             attributes["semnalare"] = first_alert.get("semnalare", "")
@@ -434,7 +433,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             attributes["zona"] = self._filter_zona_for_county(zona_full, self.county)
             
             # Alte informații utile
-            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
+            attributes["Fenomene"] = first_alert.get("phenomena", "default")
             attributes["titlu"] = first_alert.get("title", "")
             
             # Setează iconița în funcție de fenomen
@@ -442,7 +441,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
             # Când nu există deloc alerte pentru acest județ
-            attributes["numeCuloare"] = None
+            attributes["Culoare"] = None
             attributes["dataInceput"] = None
             attributes["dataSfarsit"] = None
             attributes["semnalare"] = None
