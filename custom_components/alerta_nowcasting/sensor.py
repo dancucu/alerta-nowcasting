@@ -383,10 +383,15 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             "county": self.county,
         }
         
-        # Adaugă detalii despre prima alertă activă pentru acest județ
+        # Adaugă detalii despre prima alertă disponibilă pentru acest județ
+        # Preferă alertele active, dar dacă nu există, folosește orice alertă disponibilă
+        first_alert = None
         if active_alerts:
             first_alert = active_alerts[0]
-            
+        elif county_alerts:
+            first_alert = county_alerts[0]
+        
+        if first_alert:
             # Atribute RAW din API
             attributes["numeCuloare"] = first_alert.get("numeCuloare", "")
             attributes["dataInceput"] = first_alert.get("dataInceput", "")
@@ -405,7 +410,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             phenomena = first_alert.get("phenomena", "default")
             self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
-            # Când nu există alerte active
+            # Când nu există deloc alerte pentru acest județ
             attributes["numeCuloare"] = None
             attributes["dataInceput"] = None
             attributes["dataSfarsit"] = None
