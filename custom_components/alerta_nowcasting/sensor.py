@@ -27,11 +27,8 @@ from .const import (
     CONF_API_URL,
     CONF_COUNTIES,
     DEFAULT_SCAN_INTERVAL,
-    ATTR_ALERTS,
     ATTR_ACTIVE_ALERTS,
-    ATTR_COUNTIES,
     ATTR_PHENOMENA,
-    ATTR_SEVERITY,
     ATTR_LAST_UPDATE,
     PHENOMENA_ICONS,
     PHENOMENA_TYPES,
@@ -388,6 +385,19 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         # Dacă nu găsește, returnează textul original
         return zona_text
 
+    def _format_ro_datetime(self, value: str) -> str | None:
+        """Format datetime string to Romanian display format (DD.MM.YYYY HH:MM)."""
+        if not value:
+            return None
+        try:
+            dt = dt_util.parse_datetime(value)
+            if dt:
+                dt = dt_util.as_local(dt)
+                return dt.strftime("%d.%m.%Y %H:%M")
+        except Exception:
+            return value
+        return value
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
@@ -402,7 +412,7 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         attributes = {
             ATTR_ACTIVE_ALERTS: len(active_alerts),
             ATTR_LAST_UPDATE: data.get("last_update"),
-            "county": self.county,
+            "Județ": self.county,
         }
         
         # Adaugă detalii despre prima alertă disponibilă pentru acest județ
@@ -416,19 +426,16 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         if first_alert:
             # Atribute RAW din API
             attributes["numeCuloare"] = first_alert.get("numeCuloare", "")
-            attributes["dataInceput"] = first_alert.get("dataInceput", "")
-            attributes["dataSfarsit"] = first_alert.get("dataSfarsit", "")
+            attributes["dataInceput"] = self._format_ro_datetime(first_alert.get("dataInceput", ""))
+            attributes["dataSfarsit"] = self._format_ro_datetime(first_alert.get("dataSfarsit", ""))
             attributes["semnalare"] = first_alert.get("semnalare", "")
             # Filtrează zona să conțină doar județul curent
             zona_full = first_alert.get("zona_api", "")
             attributes["zona"] = self._filter_zona_for_county(zona_full, self.county)
             
             # Alte informații utile
-            attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
             attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
-            attributes[ATTR_SEVERITY] = first_alert.get("severity_level", "unknown")
             attributes["titlu"] = first_alert.get("title", "")
-            attributes["tip_mesaj"] = first_alert.get("message_type_name", "")
             
             # Setează iconița în funcție de fenomen
             phenomena = first_alert.get("phenomena", "default")
