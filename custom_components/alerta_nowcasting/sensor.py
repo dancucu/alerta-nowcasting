@@ -344,8 +344,10 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the state of the sensor - alerta or liniste."""
         if self.coordinator.data:
-            active_alerts = self._get_county_alerts(self.coordinator.data.get("active_alerts", []))
-            if active_alerts:
+            # Verifică dacă există alerte pentru acest județ (active sau viitoare)
+            all_alerts = self.coordinator.data.get("alerts", [])
+            county_alerts = self._get_county_alerts(all_alerts)
+            if county_alerts:
                 return "alerta"
         
         return "liniste"
@@ -362,6 +364,23 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             if self.county in alert.get("counties", []):
                 county_alerts.append(alert)
         return county_alerts
+    
+    def _filter_zona_for_county(self, zona_text: str, county: str) -> str:
+        """Extract only the relevant part of zona text for the current county."""
+        if not zona_text or county == "România":
+            return zona_text
+        
+        # Split după <br> și alte variante
+        lines = re.split(r'<br>|<br/>|<br />|;(?=\s*Jude)', zona_text, flags=re.IGNORECASE)
+        
+        # Caută linia care conține județul curent
+        county_pattern = rf'Jude[țt]ul\s+{re.escape(county)}\s*:'
+        for line in lines:
+            if re.search(county_pattern, line, re.IGNORECASE):
+                return line.strip()
+        
+        # Dacă nu găsește, returnează textul original
+        return zona_text
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -397,7 +416,9 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
             attributes["dataInceput"] = first_alert.get("dataInceput", "")
             attributes["dataSfarsit"] = first_alert.get("dataSfarsit", "")
             attributes["semnalare"] = first_alert.get("semnalare", "")
-            attributes["zona"] = first_alert.get("zona_api", "")
+            # Filtrează zona să conțină doar județul curent
+            zona_full = first_alert.get("zona_api", "")
+            attributes["zona"] = self._filter_zona_for_county(zona_full, self.county)
             
             # Alte informații utile
             attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
