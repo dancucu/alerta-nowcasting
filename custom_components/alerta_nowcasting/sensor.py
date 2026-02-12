@@ -397,24 +397,10 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data
         all_alerts = data.get("alerts", [])
         active_alerts = self._get_county_alerts(data.get("active_alerts", []))
-        
-        # Get county-specific alerts for attributes
         county_alerts = self._get_county_alerts(all_alerts)
-        
-        # Filtrează zona în fiecare alertă pentru a afișa doar județul curent
-        filtered_alerts = []
-        for alert in county_alerts:
-            alert_copy = alert.copy()
-            zona_full = alert_copy.get("zona_api", "")
-            alert_copy["zona"] = self._filter_zona_for_county(zona_full, self.county)
-            # Elimină zona_api și zona_original din lista de alerte pentru a evita confuzia
-            alert_copy.pop("zona_api", None)
-            alert_copy.pop("zona_original", None)
-            filtered_alerts.append(alert_copy)
         
         attributes = {
             ATTR_ACTIVE_ALERTS: len(active_alerts),
-            ATTR_ALERTS: filtered_alerts,
             ATTR_LAST_UPDATE: data.get("last_update"),
             "county": self.county,
         }
