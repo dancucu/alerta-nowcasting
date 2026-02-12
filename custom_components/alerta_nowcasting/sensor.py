@@ -336,26 +336,13 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> str:
-        """Return the state of the sensor - color code of active alerts for this county."""
+        """Return the state of the sensor - alerta or liniste."""
         if self.coordinator.data:
             active_alerts = self._get_county_alerts(self.coordinator.data.get("active_alerts", []))
             if active_alerts:
-                # Returnează codul de culoare din prima alertă activă
-                # Exemplu: "Galben", "Portocaliu", "Roșu"
-                first_alert = active_alerts[0]
-                color_name = first_alert.get("severity", "").capitalize()
-                
-                # Mapez códurile invers: galben -> Galben, portocaliu -> Portocaliu, rosu -> Roșu
-                color_map = {
-                    "galben": "Galben",
-                    "portocaliu": "Portocaliu",
-                    "rosu": "Roșu",
-                }
-                
-                severity = first_alert.get("severity", "")
-                return color_map.get(severity, "Necunoscut")
+                return "alerta"
         
-        return "Ok"
+        return "liniste"
 
     def _get_county_alerts(self, alerts: list[dict]) -> list[dict]:
         """Filter alerts for this county."""
@@ -393,23 +380,46 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         # Adaugă detalii despre prima alertă activă pentru acest județ
         if active_alerts:
             first_alert = active_alerts[0]
-            attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
-            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
-            attributes[ATTR_SEVERITY] = first_alert.get("severity_level", "unknown")
-            attributes["alert_title"] = first_alert.get("title", "")
-            attributes["alert_description"] = first_alert.get("description", "")
-            attributes["alert_zona"] = first_alert.get("zona", "")
-            attributes["alert_message_type"] = first_alert.get("message_type_name", "")
             
-            if first_alert.get("start_time"):
-                attributes["alert_start"] = first_alert["start_time"].isoformat()
-            if first_alert.get("end_time"):
-                attributes["alert_end"] = first_alert["end_time"].isoformat()
+            # Cod culoare
+            color_map = {
+                "galben": "Galben",
+                "portocaliu": "Portocaliu",
+                "rosu": "Roșu",
+            }
+            severity = first_alert.get("severity", "")
+            attributes["culoare"] = color_map.get(severity, "Necunoscut")
+            
+            # Interval de timp
+            if first_alert.get("start_time") and first_alert.get("end_time"):
+                attributes["interval"] = f"{first_alert['start_time'].strftime('%Y-%m-%d %H:%M')} - {first_alert['end_time'].strftime('%Y-%m-%d %H:%M')}"
+                attributes["data_inceput"] = first_alert["start_time"].isoformat()
+                attributes["data_sfarsit"] = first_alert["end_time"].isoformat()
+            
+            # Zone afectate
+            attributes["zona"] = first_alert.get("zona", "")
+            attributes["zona_originala"] = first_alert.get("zona_original", "")
+            attributes[ATTR_COUNTIES] = first_alert.get("counties", [])
+            
+            # Fenomene
+            attributes["fenomen"] = first_alert.get("phenomena", "default")
+            attributes[ATTR_PHENOMENA] = first_alert.get("phenomena", "default")
+            
+            # Alte informații utile
+            attributes[ATTR_SEVERITY] = first_alert.get("severity_level", "unknown")
+            attributes["titlu"] = first_alert.get("title", "")
+            attributes["descriere"] = first_alert.get("description", "")
+            attributes["tip_mesaj"] = first_alert.get("message_type_name", "")
             
             # Setează iconița în funcție de fenomen
             phenomena = first_alert.get("phenomena", "default")
             self._attr_icon = PHENOMENA_ICONS.get(phenomena, PHENOMENA_ICONS["default"])
         else:
+            # Când nu există alerte active
+            attributes["culoare"] = None
+            attributes["interval"] = None
+            attributes["zona"] = None
+            attributes["fenomen"] = None
             self._attr_icon = "mdi:weather-cloudy"
         
         return attributes
