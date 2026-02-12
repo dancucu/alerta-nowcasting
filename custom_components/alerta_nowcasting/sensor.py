@@ -204,7 +204,9 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                 try:
                     dt = dt_util.parse_datetime(data_inceput)
                     if dt and dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
+                        # API-ul returnează timpul în timezone-ul local (România/București)
+                        # Nu este UTC, așa că îl setăm direct la timezone-ul default
+                        dt = dt_util.as_local(dt)
                     start_time = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse start time '%s': %s", data_inceput, err)
@@ -213,7 +215,9 @@ class AlerteNowcastingCoordinator(DataUpdateCoordinator):
                 try:
                     dt = dt_util.parse_datetime(data_sfarsit)
                     if dt and dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=dt_util.UTC).astimezone()
+                        # API-ul returnează timpul în timezone-ul local (România/București)
+                        # Nu este UTC, așa că îl setăm direct la timezone-ul default
+                        dt = dt_util.as_local(dt)
                     end_time = dt
                 except Exception as err:
                     _LOGGER.warning("Could not parse end time '%s': %s", data_sfarsit, err)
@@ -370,14 +374,16 @@ class AlerteNowcastingSensor(CoordinatorEntity, SensorEntity):
         if not zona_text or county == "România":
             return zona_text
         
-        # Split după <br> și alte variante
-        lines = re.split(r'<br>|<br/>|<br />|;(?=\s*Jude)', zona_text, flags=re.IGNORECASE)
+        # Split după <br> sau ; urmat de "Județul"
+        # Pattern: ;<br> sau <br> sau doar ; când urmează "Județul"
+        parts = re.split(r';?<br\s*/?>|;(?=\s*Jude[țt])', zona_text, flags=re.IGNORECASE)
         
-        # Caută linia care conține județul curent
+        # Caută partea care conține județul curent
         county_pattern = rf'Jude[țt]ul\s+{re.escape(county)}\s*:'
-        for line in lines:
-            if re.search(county_pattern, line, re.IGNORECASE):
-                return line.strip()
+        for part in parts:
+            if re.search(county_pattern, part, re.IGNORECASE):
+                # Elimină whitespace și returnează doar această parte
+                return part.strip()
         
         # Dacă nu găsește, returnează textul original
         return zona_text
